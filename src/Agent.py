@@ -9,8 +9,20 @@ Transition = namedtuple(
     'Transition',
     ('state', 'action', 'next_state', 'reward')
 )
+import torch
+import numpy as np
+from src.DQN import DQN
+from src.utils import ReplayMemory
+from collections import namedtuple, defaultdict
+from abc import abstractmethod
 
-class Agent():
+
+Transition = namedtuple(
+    'Transition',
+    ('state', 'action', 'next_state', 'reward')
+)
+
+class DQAgent():
     def __init__(
         self, 
         n_observations : int, 
@@ -27,7 +39,7 @@ class Agent():
 
         self.epsilon = 0.9
         self.epsilon_decay = epsilon_decay
-        self.final_epsilon = 5e-2
+        self.final_epsilon = 1e-3
 
         self.gamma = 1 - 1e-2
 
@@ -163,3 +175,103 @@ class Agent():
                 policy_net_state_dict[key]*self.t + target_net_state_dict[key]*(1-self.t)
             
         self.target_dqn.load_state_dict(target_net_state_dict)
+
+class BaseAgent():
+    def __init__(self,
+                 n_observations : int,
+                 n_actions : int,
+                 alpha : float = 0.7,
+                 epsilon_decay : float = 1-1e-4,
+                 gamma : float = 0.95,
+                 final_epsilon : float = 0.1,
+                 ) -> None:
+        
+        self.epsilon = final_epsilon  
+        self.epsilon_decay = epsilon_decay
+        self.final_epsilon = final_epsilon
+
+        self.alpha = alpha
+        self.gamma = gamma
+        self.q = defaultdict(lambda : np.zeros(n_observations))
+        self.n_actions = n_actions
+
+    def act(self, state):
+        if self.epsilon > self.final_epsilon:
+            self.epsilon *= self.epsilon_decay
+
+        elif self.epsilon < self.final_epsilon:
+            self.epsilon = self.final_epsilon
+
+        if np.random.rand() < self.epsilon:
+            return np.random.randint(0, self.n_actions)
+        
+        else:
+            return np.argmax(self.q[state])
+        
+    @abstractmethod
+    def learn(
+        self, 
+        state : tuple , 
+        next_state : tuple, 
+        action: int, 
+        reward : int,
+        next_action : int = None
+    ):
+        ...
+
+
+class QAgent(BaseAgent):
+    def __init__(self, 
+                 n_observations : int, 
+                 n_actions: int, 
+                 alpha : float = 0.7,
+                 epsilon_decay : float = 1-1e-4,
+                 gamma : float = 0.95,
+                 final_epsilon : float = 0.1
+                ) -> None:
+        
+        super().__init__(n_observations, n_actions, alpha, epsilon_decay, gamma, final_epsilon)
+
+    def learn(
+        self, 
+        state:tuple , 
+        next_state: tuple, 
+        action: int, 
+        reward :int,
+        next_action = None
+    ):
+
+        Q_old = self.q[state][action]
+        max_Q_next = np.max(self.q[next_state])
+        
+        Q_new = (1 - self.alpha) * Q_old + self.alpha * (reward +  self.gamma * max_Q_next)
+        self.q[state][action] = Q_new
+
+        delta =  reward + self.gamma * self.q[next_state][next_action] - self.q[state][action]
+        return delta**2
+
+class SarsaAgent(BaseAgent):
+    def __init__(self, 
+                 n_observations : int,
+                 n_actions: int, 
+                 alpha : float = 0.7,
+                 epsilon_decay : float = 1-1e-4,
+                 gamma : float = 0.95,
+                 final_epsilon : float = 0.1
+                ) -> None:
+        
+        super().__init__(n_observations, n_actions, alpha, epsilon_decay, gamma, final_epsilon)
+
+    def learn(
+        self, 
+        state:tuple , 
+        next_state: tuple, 
+        action: int, 
+        reward :int,
+        next_action : int = None
+    ):
+        self.q[state][action] += self.alpha * (reward + self.gamma * self.q[next_state][next_action] - self.q[state][action])
+
+        delta =  reward + self.gamma * self.q[next_state][next_action] - self.q[state][action]
+        return delta**2
+        
