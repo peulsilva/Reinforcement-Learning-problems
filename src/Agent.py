@@ -184,6 +184,7 @@ class BaseAgent():
                  epsilon_decay : float = 1-1e-4,
                  gamma : float = 0.95,
                  final_epsilon : float = 0.1,
+                 
                  ) -> None:
         
         self.epsilon = final_epsilon  
@@ -197,7 +198,7 @@ class BaseAgent():
 
     def act(self, state):
         if self.epsilon > self.final_epsilon:
-            self.epsilon -= self.epsilon_decay
+            self.epsilon *= self.epsilon_decay
 
         elif self.epsilon < self.final_epsilon:
             self.epsilon = self.final_epsilon

@@ -58,6 +58,35 @@ def create_grids(agent, usable_ace=False):
     )
     return value_grid, policy_grid
 
+def create_grids_flappy(agent):
+    state_value = defaultdict(float)
+    policy = defaultdict(int)
+    for obs, action_values in agent.q.items():
+        state_value[obs] = float(np.max(action_values))
+        policy[obs] = int(np.argmax(action_values))
+
+    player_count, dealer_count = np.meshgrid(
+        # players count, dealers face-up card
+        np.arange(3, 13),
+        np.arange(-5, 10),
+    )
+
+    # create the value grid for plotting
+    value = np.apply_along_axis(
+        lambda obs: state_value[(obs[0], obs[1])],
+        axis=2,
+        arr=np.dstack([player_count, dealer_count]),
+    )
+    value_grid = player_count, dealer_count, value
+
+    # create the policy grid for plotting
+    policy_grid = np.apply_along_axis(
+        lambda obs: policy[(obs[0], obs[1],)],
+        axis=2,
+        arr=np.dstack([player_count, dealer_count]),
+    )
+    return value_grid, policy_grid
+
 
 def create_plots(value_grid, policy_grid, title: str):
     """Creates a plot using a value and policy grid."""
@@ -80,8 +109,8 @@ def create_plots(value_grid, policy_grid, title: str):
     plt.xticks(range(12, 22), range(12, 22))
     plt.yticks(range(1, 11), ["A"] + list(range(2, 11)))
     ax1.set_title(f"State values: {title}")
-    ax1.set_xlabel("Player sum")
-    ax1.set_ylabel("Dealer showing")
+    # ax1.set_xlabel("Player sum")
+    # ax1.set_ylabel("Dealer showing")
     ax1.zaxis.set_rotate_label(False)
     ax1.set_zlabel("Value", fontsize=14, rotation=90)
     ax1.view_init(20, 220)
@@ -103,4 +132,46 @@ def create_plots(value_grid, policy_grid, title: str):
     ax2.legend(handles=legend_elements, bbox_to_anchor=(1.3, 1))
     return fig
 
+
+def create_plots_flappy(value_grid, policy_grid, title: str):
+    player_count, dealer_count, value = value_grid
+    fig = plt.figure(figsize=plt.figaspect(0.4))
+    fig.suptitle(title, fontsize=16)
+
+    # plot the state values
+    ax1 = fig.add_subplot(1, 2, 1, projection="3d")
+    ax1.plot_surface(
+        player_count,
+        dealer_count,
+        value,
+        rstride=1,
+        cstride=1,
+        cmap="viridis",
+        edgecolor="none",
+    )
+    plt.xticks(range(3, 13, 1), range(3, 13, 1))
+    plt.yticks(range(-5, 10, 1), range(-5, 10, 1))
+    ax1.set_title(f"State values: {title}")
+    ax1.set_xlabel("$\Delta x$")
+    ax1.set_ylabel("$\Delta y$")
+    ax1.zaxis.set_rotate_label(False)
+    ax1.set_zlabel("Value", fontsize=14, rotation=90)
+    ax1.view_init(20, 220)
+
+    # plot the policy
+    fig.add_subplot(1, 2, 2)
+    ax2 = sns.heatmap(policy_grid, linewidth=0, annot=True, cmap="Accent_r", cbar=False)
+    ax2.set_title(f"Policy: {title}")
+    ax2.set_xlabel("$\Delta x$")
+    ax2.set_ylabel("$\Delta y$")
+    ax2.set_xticklabels(range(3, 13,))
+    ax2.set_yticklabels(range(10, -5,-1))
+
+    # add a legend
+    legend_elements = [
+        Patch(facecolor="lightgreen", edgecolor="black", label="Jump"),
+        Patch(facecolor="grey", edgecolor="black", label="Do nothing"),
+    ]
+    ax2.legend(handles=legend_elements, bbox_to_anchor=(1.3, 1))
+    return fig
 
