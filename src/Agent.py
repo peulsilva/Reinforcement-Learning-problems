@@ -192,12 +192,12 @@ class BaseAgent():
 
         self.alpha = alpha
         self.gamma = gamma
-        self.q = defaultdict(lambda : np.zeros(n_observations))
+        self.q = defaultdict(lambda : np.zeros(n_actions))
         self.n_actions = n_actions
 
     def act(self, state):
         if self.epsilon > self.final_epsilon:
-            self.epsilon *= self.epsilon_decay
+            self.epsilon -= self.epsilon_decay
 
         elif self.epsilon < self.final_epsilon:
             self.epsilon = self.final_epsilon
@@ -238,11 +238,12 @@ class QAgent(BaseAgent):
         next_state: tuple, 
         action: int, 
         reward :int,
-        next_action = None
+        next_action = None,
+        terminated : bool = None,
     ):
 
         Q_old = self.q[state][action]
-        max_Q_next = np.max(self.q[next_state])
+        max_Q_next = (not terminated) * np.max(self.q[next_state])
         
         Q_new = (1 - self.alpha) * Q_old + self.alpha * (reward +  self.gamma * max_Q_next)
         self.q[state][action] = Q_new
@@ -268,10 +269,52 @@ class SarsaAgent(BaseAgent):
         next_state: tuple, 
         action: int, 
         reward :int,
-        next_action : int = None
+        next_action : int = None,
+        terminated : bool = None
     ):
-        self.q[state][action] += self.alpha * (reward + self.gamma * self.q[next_state][next_action] - self.q[state][action])
+        self.q[state][action] += self.alpha * (reward + self.gamma * (not terminated )* self.q[next_state][next_action] - self.q[state][action])
 
         delta =  reward + self.gamma * self.q[next_state][next_action] - self.q[state][action]
         return delta**2
+    
+class MCAgent(BaseAgent):
+    def __init__(self, 
+                 n_observations : int,
+                 n_actions: int, 
+                 alpha : float = 0.7,
+                 epsilon_decay : float = 1-1e-4,
+                 gamma : float = 0.95,
+                 final_epsilon : float = 0.1
+                ) -> None:
+        
+        super().__init__(n_observations, n_actions, alpha, epsilon_decay, gamma, final_epsilon)
+        self.state_count = defaultdict(float)
+
+    def learn(self,
+              state,
+              action,
+              reward,
+              expected_reward,
+              s_a_count):
+        
+        expected_reward = reward + self.gamma * expected_reward 
+        
+        self.q[state][action] = self.q[state][action] + (expected_reward - self.q[state][action]) / s_a_count
+
+        return expected_reward
+    
+    def get_epsilon(self, state_count : int):
+        return (100)/(100+state_count)
+    
+    def act(self, state):
+        self.state_count[state]+=1 
+        epsilon = self.get_epsilon(self.state_count[state])
+
+        if np.random.rand() < epsilon:
+            return np.random.randint(0, self.n_actions)
+        
+        else:
+            return np.argmax(self.q[state])
+
+    
         
