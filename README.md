@@ -1,5 +1,5 @@
 
-# Reinforcement Learning Problemes
+# Reinforcement Learning Problems
 
 This repository contains Python implementations of reinforcement learning solutions for three classic games: Blackjack, Lunar Lander, and Flappy Bird. The reinforcement learning algorithms used in this project aim to train agents to play these games effectively through trial and error, learning from their interactions with the environment.
 
