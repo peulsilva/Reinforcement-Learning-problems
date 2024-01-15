@@ -31,8 +31,9 @@ This repository contains Python implementations of reinforcement learning soluti
 The reinforcement learning solutions for these games are implemented using various algorithms, including:
 
 - Q-Learning
+- Monte Carlo 
+- SARSA
 - Deep Q-Networks (DQN)
-- Policy Gradient Methods (such as REINFORCE)
 
 The code is modular, allowing for easy experimentation with different algorithms and game environments.
 
