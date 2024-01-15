@@ -9,16 +9,22 @@ This repository contains Python implementations of reinforcement learning soluti
 
 - **Description:** A simple text-based implementation of the popular card game Blackjack.
 - **Objective:** Train an agent to make optimal decisions to maximize rewards and win the game.
+- **Observation Space:** The agent receives information about the current state, including the position, velocity, and orientation of the lunar module.
+
 
 ### 2. Lunar Lander
 
 - **Description:** A 2D lunar landing simulation where the agent controls a spacecraft to safely land on the moon's surface.
 - **Objective:** Train an agent to land the lunar module safely while considering fuel constraints and avoiding obstacles.
+- **Observation Space:** The agent receives information about the current state, including the position, velocity, and orientation of the lunar module.
+
 
 ### 3. Flappy Bird
 
 - **Description:** A simplified version of the popular Flappy Bird game where the agent controls a bird to navigate through pipes.
 - **Objective:** Train an agent to learn the optimal timing for jumps to navigate through the pipes and achieve the highest score.
+- **Observation Space:** The agent observes the current state of the game, including the bird's position, and the position of upcoming pipes.
+
 
 ## Reinforcement Learning Algorithms
 
